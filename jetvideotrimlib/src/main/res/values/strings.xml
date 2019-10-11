@@ -1,0 +1,11 @@
+<resources>
+    <string name="cancel_discard">Discard</string>
+    <string name="save_continue">Continue</string>
+    <string name="short_seconds">sec</string>
+    <string name="megabyte">MB</string>
+    <string name="kilobyte">KB</string>
+
+    <!--Trimmer-->
+    <string name="trimming_progress">Trimming your video...</string>
+    <string name="file_size_more_error_msg">Video size can not be more than 50 mb.</string>
+</resources>
