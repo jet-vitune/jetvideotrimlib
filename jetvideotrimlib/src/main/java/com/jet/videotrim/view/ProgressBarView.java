@@ -27,10 +27,11 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.jet.videotrim.R;
 import com.jet.videotrim.interfaces.OnProgressVideoListener;
@@ -103,22 +104,22 @@ public class ProgressBarView extends View implements OnRangeSeekBarListener, OnP
     }
 
     @Override
-    public void onCreate(RangeSeekBarView rangeSeekBarView, int index, float value) {
+    public void onCreate(RangeSeekBarView2 rangeSeekBarView, int index, float value) {
         updateBackgroundRect(index, value);
     }
 
     @Override
-    public void onSeek(RangeSeekBarView rangeSeekBarView, int index, float value) {
+    public void onSeek(RangeSeekBarView2 rangeSeekBarView, int index, float value) {
         updateBackgroundRect(index, value);
     }
 
     @Override
-    public void onSeekStart(RangeSeekBarView rangeSeekBarView, int index, float value) {
+    public void onSeekStart(RangeSeekBarView2 rangeSeekBarView, int index, float value) {
         updateBackgroundRect(index, value);
     }
 
     @Override
-    public void onSeekStop(RangeSeekBarView rangeSeekBarView, int index, float value) {
+    public void onSeekStop(RangeSeekBarView2 rangeSeekBarView, int index, float value) {
         updateBackgroundRect(index, value);
     }
 

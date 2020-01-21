@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@android:color/black">
 
     <RelativeLayout
         android:id="@+id/layout_surface_view"
@@ -13,20 +15,51 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <VideoView
+        <com.devbrackets.android.exomedia.ui.widget.VideoView
             android:id="@+id/video_loader"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"/>
-
-        <ImageView
-            android:id="@+id/icon_video_play"
-            android:layout_width="wrap_content"
+            android:paddingBottom="20dp"
+            android:background="#000"
+            app:measureBasedOnAspectRatio="false"
+            app:useDefaultControls="false"
+            app:useTextureViewBacking="false"
+            app:videoScale="centerCrop"/>
+        <FrameLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:background="@drawable/play_button"/>
+            android:orientation="horizontal"
+            android:visibility="visible"
+            android:padding="@dimen/dp10"
+            android:background="@android:color/black">
+
+            <ImageButton
+                android:id="@+id/cancelBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/black_translucent"
+                android:gravity="center"
+                android:layout_gravity="center|left"
+                android:src="@drawable/ic_navigat"/>
+            <TextView
+                android:id="@+id/finishBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="right|center"
+                android:text="Continue"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:visibility="visible"
+                android:textSize="@dimen/sp14"
+                android:paddingTop="@dimen/dp5"
+                android:paddingBottom="@dimen/dp5"
+                android:paddingRight="@dimen/dp10"
+                android:paddingLeft="@dimen/dp10"
+                android:background="@drawable/vi_tune_of_day_txt_bg"/>
+
+        </FrameLayout>
 
     </RelativeLayout>
 
@@ -34,129 +67,78 @@
         android:id="@+id/layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:paddingLeft="15dp"
-        android:paddingRight="15dp"
         android:layout_alignParentBottom="true"
-        android:background="#90000000">
+        android:background="@android:color/black"
+        android:layout_marginBottom="@dimen/dp10">
 
-        <RelativeLayout
-            android:id="@+id/timeText"
+        <TextView
+            android:id="@+id/video_shoot_tip"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/dp30"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:gravity="center"
+            android:text="@string/drag_to_select_clips_within_30_seconds_of_posting"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/sp13"
+            android:textStyle="bold"/>
+
+        <FrameLayout
+            android:id="@+id/video_frames_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"
-            android:visibility="gone">
+            android:layout_below="@+id/video_shoot_tip">
 
-            <TextView
-                android:id="@+id/textSize"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/video_frames_recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/dp50"
+                android:layout_gravity="bottom"
+                tools:background="@android:color/holo_green_light" />
+
+            <ImageView
+                android:id="@+id/positionIcon"
                 android:layout_width="wrap_content"
+                android:layout_height="@dimen/dp50"
+                android:layout_gravity="bottom"
+                android:layout_marginLeft="@dimen/dp35"
+                android:contentDescription="@null"
+                android:src="@drawable/icon_seek_bar" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_alignParentStart="true"
-                android:textColor="@color/white"
-                android:textStyle="bold"/>
+                android:layout_gravity="bottom"
+                android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/textTimeSelection"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toEndOf="@+id/textSize"
-                android:layout_toLeftOf="@+id/textTime"
-                android:layout_toRightOf="@+id/textSize"
-                android:layout_toStartOf="@+id/textTime"
-                android:gravity="center"
-                android:textColor="@color/white"
-                android:textStyle="bold"/>
+                <View
+                    android:layout_width="@dimen/dp35"
+                    android:layout_height="@dimen/dp60"
+                    android:layout_gravity="bottom"
+                    android:background="#7F000000" />
 
-            <TextView
-                android:id="@+id/textTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:textColor="@color/white"
-                android:textStyle="bold"/>
+                <LinearLayout
+                    android:id="@+id/seekBarLayout"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/dp60"
+                    android:layout_gravity="bottom"
+                    android:layout_weight="1"
+                    android:gravity="bottom"
+                    android:orientation="vertical" />
 
-        </RelativeLayout>
-
-        <SeekBar
-            android:id="@+id/handlerTop"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/timeText"
-            android:layout_gravity="center_horizontal"
-            android:max="1000"
-            android:progressDrawable="@android:color/transparent"
-            android:secondaryProgress="0"
-            />
-
-        <com.jet.videotrim.view.ProgressBarView
-            android:id="@+id/timeVideoView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/handlerTop"/>
-
-        <com.jet.videotrim.view.TimeLineView
-            android:id="@+id/timeLineView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/timeVideoView"/>
-
-        <com.jet.videotrim.view.RangeSeekBarView
-            android:id="@+id/timeLineBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignTop="@+id/timeLineView"/>
-
-        <View
-            android:id="@+id/lineTop"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:visibility="gone"
-            android:layout_below="@+id/timeLineBar"
-            android:background="@color/line_button"/>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/lineTop"
-            android:layout_marginBottom="10dp"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_gravity="bottom"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btCancel"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@drawable/white_button_background"
-                android:layout_marginRight="10dp"
-                android:text="@string/cancel_discard"
-                android:textColor="@android:color/black"/>
+                <View
+                    android:layout_width="@dimen/dp35"
+                    android:layout_height="@dimen/dp60"
+                    android:layout_gravity="bottom"
+                    android:background="#7F000000" />
+            </LinearLayout>
 
 
+        </FrameLayout>
 
-            <Button
-                android:id="@+id/btSave"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginLeft="10dp"
-                android:background="@drawable/continue_btn_bg"
-                android:text="@string/save_continue"
-                android:textColor="@android:color/white"/>
-
-        </LinearLayout>
 
     </RelativeLayout>
 
 
-
-
-
-
-</FrameLayout>
+</RelativeLayout>

@@ -29,7 +29,10 @@ dependencies {
     androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    implementation 'com.googlecode.mp4parser:isoparser:1.1.20'
-    androidTestImplementation 'androidx.annotation:annotation:1.0.2'
+    implementation "androidx.recyclerview:recyclerview:1.1.0"
+    implementation 'com.googlecode.mp4parser:isoparser:1.1.22'
+    androidTestImplementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'com.google.android.exoplayer:exoplayer:2.9.1'
+    implementation 'com.devbrackets.android:exomedia:4.3.0'
 
 }

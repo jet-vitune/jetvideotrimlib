@@ -26,6 +26,7 @@ package com.jet.videotrim.view;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+
 import androidx.annotation.NonNull;
 
 import com.jet.videotrim.R;

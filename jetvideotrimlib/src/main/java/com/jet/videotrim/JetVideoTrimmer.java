@@ -23,83 +23,96 @@
  */
 package com.jet.videotrim;
 
+import android.Manifest;
+import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.Message;
-import androidx.annotation.NonNull;
+import android.provider.Settings;
+import android.telephony.TelephonyManager;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.VideoView;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.devbrackets.android.exomedia.listener.OnCompletionListener;
+import com.devbrackets.android.exomedia.listener.OnErrorListener;
+import com.devbrackets.android.exomedia.listener.OnPreparedListener;
+import com.devbrackets.android.exomedia.ui.widget.VideoView;
 import com.jet.videotrim.interfaces.JetVideoListener;
-import com.jet.videotrim.interfaces.OnProgressVideoListener;
-import com.jet.videotrim.interfaces.OnRangeSeekBarListener;
 import com.jet.videotrim.interfaces.OnTrimVideoListener;
 import com.jet.videotrim.utils.BackgroundExecutor;
-import com.jet.videotrim.utils.TrimVideoUtils;
+import com.jet.videotrim.utils.MyVideoTrimUtil;
+import com.jet.videotrim.utils.SpacesItemDecoration;
+import com.jet.videotrim.utils.TrimVideoUtil2;
 import com.jet.videotrim.utils.UiThreadExecutor;
-import com.jet.videotrim.view.ProgressBarView;
-import com.jet.videotrim.view.RangeSeekBarView;
-import com.jet.videotrim.view.Thumb;
-import com.jet.videotrim.view.TimeLineView;
+import com.jet.videotrim.view.RangeSeekBarView2;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
+import java.util.Locale;
 
-import static com.jet.videotrim.utils.TrimVideoUtils.stringForTime;
+import static com.jet.videotrim.utils.MyVideoTrimUtil.VIDEO_FRAMES_WIDTH;
 
 
 public class JetVideoTrimmer extends FrameLayout {
 
     private static final String TAG = JetVideoTrimmer.class.getSimpleName();
     private static final int MIN_TIME_FRAME = 1000;
-    private static final int SHOW_PROGRESS = 2;
-
-    private SeekBar mHolderTopView;
-    private RangeSeekBarView mRangeSeekBarView;
     private RelativeLayout mLinearVideo;
-    private View mTimeInfoContainer;
     private VideoView mVideoView;
-    private ImageView mPlayView;
-    private TextView mTextSize;
-    private TextView mTextTimeFrame;
-    private TextView mTextTime;
-    private TimeLineView mTimeLineView;
-
-    private ProgressBarView mVideoProgressIndicator;
+    private RecyclerView mVideoThumbRecyclerView;
     private Uri mSrc;
     private String mFinalPath;
-
-    private int mMaxDuration = 30;
-    private List<OnProgressVideoListener> mListeners;
-
     private OnTrimVideoListener mOnTrimVideoListener;
     private JetVideoListener mJetVideoListener;
     private ArrayList<String> mVideoMimeTypeList;
 
-    private int mDuration = 0;
-    private int mTimeVideo = 0;
-    private int mStartPosition = 0;
-    private int mEndPosition = 0;
+    private long mDuration = 0;
     private Context mContext;
-    private long mOriginSizeFile;
-    private boolean mResetSeekBar = true;
-    private final MessageHandler mMessageHandler = new MessageHandler(this);
+    private VideoTrimmerAdapter mVideoThumbAdapter;
+    private boolean isSeeking;
+    private int lastScrollX;
+    private int mScaledTouchSlop;
+    private boolean isOverScaledTouchSlop;
+    private long scrollPos;
+    private float mAverageMsPx;
+    private long mLeftProgressPos;
+    private long mRightProgressPos;
+    private long mRedProgressBarPos;
+    private ImageView mRedProgressIcon;
+    private RangeSeekBarView2 mRangeSeekBarView;
+    private int mThumbsTotalCount;
+    private LinearLayout mSeekBarLayout;
+    private View mVideoShootTipTv;
+    private boolean isFromRestore;
+    private int mMaxWidth = VIDEO_FRAMES_WIDTH;
+    private float averagePxMs;
+    private Handler mAnimationHandle = new Handler();
+    private ValueAnimator mRedProgressAnimator;
+    private Handler mAnimationHandler = new Handler();
+    private CustomVideoControls customVideoControls;
+    private CustomVideoViewModel customVideoViewModel;
+    private Handler handler = new Handler();
+    private boolean forStory;
 
     public JetVideoTrimmer(@NonNull Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -112,24 +125,130 @@ public class JetVideoTrimmer extends FrameLayout {
 
     private void init(Context context) {
         mContext = context;
-        LayoutInflater.from(context).inflate(R.layout.view_time_line, this, true);
 
-        mHolderTopView = ((SeekBar) findViewById(R.id.handlerTop));
-        mVideoProgressIndicator = ((ProgressBarView) findViewById(R.id.timeVideoView));
-        mRangeSeekBarView = ((RangeSeekBarView) findViewById(R.id.timeLineBar));
+        LayoutInflater.from(context).inflate(R.layout.view_time_line, this, true);
         mLinearVideo = ((RelativeLayout) findViewById(R.id.layout_surface_view));
         mVideoView = ((VideoView) findViewById(R.id.video_loader));
-        mPlayView = ((ImageView) findViewById(R.id.icon_video_play));
-        mTimeInfoContainer = findViewById(R.id.timeText);
-        mTextSize = ((TextView) findViewById(R.id.textSize));
-        mTextTimeFrame = ((TextView) findViewById(R.id.textTimeSelection));
-        mTextTime = ((TextView) findViewById(R.id.textTime));
-        mTimeLineView = ((TimeLineView) findViewById(R.id.timeLineView));
+        mSeekBarLayout = findViewById(R.id.seekBarLayout);
+        mVideoShootTipTv = findViewById(R.id.video_shoot_tip);
+        mRedProgressIcon = findViewById(R.id.positionIcon);
         mVideoMimeTypeList = new ArrayList<>();
+        initRecyclerView();
         addVideoMimeType();
-
         setUpListeners();
-        setUpMargins();
+    }
+
+    private void initRangeSeekBarView() {
+        if (mRangeSeekBarView != null) return;
+        int rangeWidth;
+        mLeftProgressPos = 0;
+        if (mDuration <= MyVideoTrimUtil.MAX_SHOOT_DURATION) {
+            mThumbsTotalCount = MyVideoTrimUtil.MAX_COUNT_RANGE;
+            rangeWidth = mMaxWidth;
+            mRightProgressPos = mDuration;
+        } else {
+            mThumbsTotalCount = (int) (mDuration * 1.0f / (MyVideoTrimUtil.MAX_SHOOT_DURATION * 1.0f) * MyVideoTrimUtil.MAX_COUNT_RANGE);
+            rangeWidth = mMaxWidth / MyVideoTrimUtil.MAX_COUNT_RANGE * mThumbsTotalCount;
+            mRightProgressPos = MyVideoTrimUtil.MAX_SHOOT_DURATION;
+        }
+        mVideoThumbRecyclerView.addItemDecoration(new SpacesItemDecoration(MyVideoTrimUtil.RECYCLER_VIEW_PADDING, mThumbsTotalCount));
+        mRangeSeekBarView = new RangeSeekBarView2(mContext, mLeftProgressPos, mRightProgressPos);
+        mRangeSeekBarView.setSelectedMinValue(mLeftProgressPos);
+        mRangeSeekBarView.setSelectedMaxValue(mRightProgressPos);
+        mRangeSeekBarView.setStartEndTime(mLeftProgressPos, mRightProgressPos);
+        mRangeSeekBarView.setMinShootTime(MyVideoTrimUtil.MIN_SHOOT_DURATION);
+        mRangeSeekBarView.setNotifyWhileDragging(true);
+        mRangeSeekBarView.setOnRangeSeekBarChangeListener(mOnRangeSeekBarChangeListener);
+        mSeekBarLayout.addView(mRangeSeekBarView);
+
+        mAverageMsPx = mDuration * 1.0f / rangeWidth * 1.0f;
+        averagePxMs = (mMaxWidth * 1.0f / (mRightProgressPos - mLeftProgressPos));
+    }
+
+    private final RangeSeekBarView2.OnRangeSeekBarChangeListener mOnRangeSeekBarChangeListener = new RangeSeekBarView2.OnRangeSeekBarChangeListener() {
+        @Override
+        public void onRangeSeekBarValuesChanged(RangeSeekBarView2 bar, long minValue, long maxValue, int action, boolean isMin,
+                                                RangeSeekBarView2.Thumb pressedThumb) {
+            Log.d(TAG, "-----minValue----->>>>>>" + minValue);
+            Log.d(TAG, "-----maxValue----->>>>>>" + maxValue);
+            mLeftProgressPos = minValue + scrollPos;
+            mRedProgressBarPos = mLeftProgressPos;
+            mRightProgressPos = maxValue + scrollPos;
+            Log.d(TAG, "-----mLeftProgressPos----->>>>>>" + mLeftProgressPos);
+            Log.d(TAG, "-----mRightProgressPos----->>>>>>" + mRightProgressPos);
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    isSeeking = false;
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    isSeeking = true;
+//                    seekTo((int) (pressedThumb == RangeSeekBarView2.Thumb.MIN ? mLeftProgressPos : mRightProgressPos));//when drag happening
+                    break;
+                case MotionEvent.ACTION_UP:
+                    isSeeking = false;
+                    seekTo((int) mLeftProgressPos);
+                    break;
+                default:
+                    break;
+            }
+
+            mRangeSeekBarView.setStartEndTime(mLeftProgressPos, mRightProgressPos);
+        }
+    };
+
+    private void initRecyclerView() {
+        mVideoThumbRecyclerView = findViewById(R.id.video_frames_recyclerView);
+        mVideoThumbRecyclerView.setLayoutManager(new LinearLayoutManager(mContext, LinearLayoutManager.HORIZONTAL, false));
+        mVideoThumbAdapter = new VideoTrimmerAdapter(mContext);
+        mVideoThumbRecyclerView.setAdapter(mVideoThumbAdapter);
+        mVideoThumbRecyclerView.addOnScrollListener(mOnScrollListener);
+    }
+
+    private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
+        @Override
+        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+            super.onScrollStateChanged(recyclerView, newState);
+            Log.d(TAG, "newState = " + newState);
+        }
+
+        @Override
+        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+            super.onScrolled(recyclerView, dx, dy);
+            isSeeking = false;
+            int scrollX = calcScrollXDistance();
+            if (Math.abs(lastScrollX - scrollX) < mScaledTouchSlop) {
+                isOverScaledTouchSlop = false;
+                return;
+            }
+            isOverScaledTouchSlop = true;
+            if (scrollX == -MyVideoTrimUtil.RECYCLER_VIEW_PADDING) {
+                scrollPos = 0;
+            } else {
+                isSeeking = true;
+                scrollPos = (long) (mAverageMsPx * (MyVideoTrimUtil.RECYCLER_VIEW_PADDING + scrollX));
+                mLeftProgressPos = mRangeSeekBarView.getSelectedMinValue() + scrollPos;
+                mRightProgressPos = mRangeSeekBarView.getSelectedMaxValue() + scrollPos;
+                Log.d(TAG, "onScrolled >>>> mLeftProgressPos = " + mLeftProgressPos);
+                mRedProgressBarPos = mLeftProgressPos;
+                if (mVideoView.isPlaying()) {
+                    mVideoView.pause();
+                    setPlayPauseViewIcon(false);//here pause video
+                }
+                mRedProgressIcon.setVisibility(GONE);
+                seekTo(mLeftProgressPos);
+                mRangeSeekBarView.setStartEndTime(mLeftProgressPos, mRightProgressPos);
+                mRangeSeekBarView.invalidate();
+            }
+            lastScrollX = scrollX;
+        }
+    };
+
+    private int calcScrollXDistance() {
+        LinearLayoutManager layoutManager = (LinearLayoutManager) mVideoThumbRecyclerView.getLayoutManager();
+        int position = layoutManager.findFirstVisibleItemPosition();
+        View firstVisibleChildView = layoutManager.findViewByPosition(position);
+        int itemWidth = firstVisibleChildView.getWidth();
+        return (position) * itemWidth - firstVisibleChildView.getLeft();
     }
 
     private void addVideoMimeType() {
@@ -143,245 +262,276 @@ public class JetVideoTrimmer extends FrameLayout {
     }
 
     private void setUpListeners() {
-        mListeners = new ArrayList<>();
-        mListeners.add(new OnProgressVideoListener() {
+        findViewById(R.id.cancelBtn).setOnClickListener(new OnClickListener() {
             @Override
-            public void updateProgress(int time, int max, float scale) {
-                updateVideoProgress(time);
+            public void onClick(View view) {
+                onCancelClicked();
             }
         });
-        mListeners.add(mVideoProgressIndicator);
 
-        findViewById(R.id.btCancel)
-                .setOnClickListener(
-                        new OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                onCancelClicked();
-                            }
-                        }
-                );
-
-        findViewById(R.id.btSave)
-                .setOnClickListener(
-                        new OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                onSaveClicked();
-                            }
-                        }
-                );
-
-        final GestureDetector gestureDetector = new
-                GestureDetector(getContext(),
-                new GestureDetector.SimpleOnGestureListener() {
-                    @Override
-                    public boolean onSingleTapConfirmed(MotionEvent e) {
-                        onClickVideoPlayPause();
-                        return true;
-                    }
-                }
-        );
-
-        mVideoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+        findViewById(R.id.finishBtn).setOnClickListener(new OnClickListener() {
             @Override
-            public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+            public void onClick(View view) {
+                onSaveClicked();
+            }
+        });
+        mVideoView.setOnCompletionListener(new OnCompletionListener() {
+            @Override
+            public void onCompletion() {
+                videoCompleted();
+            }
+        });
+//        mPlayView.setOnClickListener(new OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                playVideoOrPause();
+//            }
+//        });
+        mVideoView.setOnErrorListener(new OnErrorListener() {
+            @Override
+            public boolean onError(Exception e) {
                 if (mOnTrimVideoListener != null)
-                    mOnTrimVideoListener.onError("Something went wrong reason : " + what);
+                    mOnTrimVideoListener.onError("Something went wrong reason : " + e);
                 return false;
             }
         });
 
-        mVideoView.setOnTouchListener(new OnTouchListener() {
+        mVideoView.setOnPreparedListener(new OnPreparedListener() {
             @Override
-            public boolean onTouch(View v, @NonNull MotionEvent event) {
-                gestureDetector.onTouchEvent(event);
-                return true;
-            }
-        });
-
-        mRangeSeekBarView.addOnRangeSeekBarListener(new OnRangeSeekBarListener() {
-            @Override
-            public void onCreate(RangeSeekBarView rangeSeekBarView, int index, float value) {
-                // Do nothing
-            }
-
-            @Override
-            public void onSeek(RangeSeekBarView rangeSeekBarView, int index, float value) {
-                onSeekThumbs(index, (int) value);
-            }
-
-            @Override
-            public void onSeekStart(RangeSeekBarView rangeSeekBarView, int index, float value) {
-                // Do nothing
-            }
-
-            @Override
-            public void onSeekStop(RangeSeekBarView rangeSeekBarView, int index, float value) {
-                onStopSeekThumbs();
-            }
-        });
-        mRangeSeekBarView.addOnRangeSeekBarListener(mVideoProgressIndicator);
-
-        mHolderTopView.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                onPlayerIndicatorSeekChanged(progress, fromUser);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                onPlayerIndicatorSeekStart();
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                onPlayerIndicatorSeekStop(seekBar);
-            }
-        });
-
-        mVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mp) {
-                onVideoPrepared(mp);
-            }
-        });
-
-        mVideoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-                onVideoCompleted();
+            public void onPrepared() {
+                onVideoPrepared();
             }
         });
     }
 
-    private void setUpMargins() {
-        int marge = mRangeSeekBarView.getThumbs().get(0).getWidthBitmap();
-        int widthSeek = mHolderTopView.getThumb().getMinimumWidth() / 2;
-
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) mHolderTopView.getLayoutParams();
-        lp.setMargins(marge - widthSeek, 0, marge - widthSeek, 0);
-        mHolderTopView.setLayoutParams(lp);
-
-        lp = (RelativeLayout.LayoutParams) mTimeLineView.getLayoutParams();
-        lp.setMargins(marge, 0, marge, 0);
-        mTimeLineView.setLayoutParams(lp);
-
-        lp = (RelativeLayout.LayoutParams) mVideoProgressIndicator.getLayoutParams();
-        lp.setMargins(marge, 0, marge, 0);
-        mVideoProgressIndicator.setLayoutParams(lp);
+    private void videoCompleted() {
+        seekTo(mLeftProgressPos);
+        setPlayPauseViewIcon(false);
     }
+
+    private void playVideoOrPause() {
+        if (mVideoView != null) {
+            mRedProgressBarPos = mVideoView.getCurrentPosition();
+            if (mVideoView.isPlaying()) {
+                mVideoView.pause();
+                pauseRedProgressAnimation();
+            } else {
+                mVideoView.start();
+                playingRedProgressAnimation();
+            }
+            setPlayPauseViewIcon(mVideoView.isPlaying());
+        }
+    }
+
+    public void pauseVideo() {
+        if (mVideoView != null && mVideoView.isPlaying()) {
+            mRedProgressBarPos = mVideoView.getCurrentPosition();
+            mVideoView.pause();
+            pauseRedProgressAnimation();
+            setPlayPauseViewIcon(false);
+        }
+    }
+
+    private void playingRedProgressAnimation() {
+        pauseRedProgressAnimation();
+        playingAnimation();
+        if (mAnimationRunnable != null && mAnimationHandle != null) {
+            mAnimationHandler.post(mAnimationRunnable);
+        }
+    }
+
+    private void playingAnimation() {
+        try {
+            if (mRedProgressIcon.getVisibility() == View.GONE) {
+                mRedProgressIcon.setVisibility(View.VISIBLE);
+            }
+            final LayoutParams params = (LayoutParams) mRedProgressIcon.getLayoutParams();
+            int start = (int) (MyVideoTrimUtil.RECYCLER_VIEW_PADDING + (mRedProgressBarPos - scrollPos) * averagePxMs);
+            int end = (int) (MyVideoTrimUtil.RECYCLER_VIEW_PADDING + (mRightProgressPos - scrollPos) * averagePxMs);
+            mRedProgressAnimator = ValueAnimator.ofInt(start, end).setDuration((mRightProgressPos - scrollPos) - (mRedProgressBarPos - scrollPos));
+            mRedProgressAnimator.setInterpolator(new LinearInterpolator());
+            mRedProgressAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    params.leftMargin = (int) animation.getAnimatedValue();
+                    mRedProgressIcon.setLayoutParams(params);
+                    Log.d(TAG, "----onAnimationUpdate--->>>>>>>" + mRedProgressBarPos);
+                }
+            });
+            mRedProgressAnimator.start();
+        } catch (Exception e) {
+
+        }
+
+    }
+
+    private void pauseRedProgressAnimation() {
+        try {
+            if (mRedProgressIcon != null)
+                mRedProgressIcon.clearAnimation();
+            if (mRedProgressAnimator != null) {
+                if (mAnimationHandler != null)
+                    mAnimationHandler.removeCallbacks(mAnimationRunnable);
+                mRedProgressAnimator.cancel();
+            }
+        } catch (Exception e) {
+        }
+
+    }
+
+    private Runnable mAnimationRunnable = new Runnable() {
+
+        @Override
+        public void run() {
+            updateVideoProgress();
+        }
+    };
 
     private void onSaveClicked() {
-
-        int videoLengthDifference = mEndPosition - mStartPosition;
-
-        if (videoLengthDifference < 2000) {
-            mOnTrimVideoListener.onError("The minimum length of the video should be 2 seconds!");
-        } else if (videoLengthDifference > 35000) {
-            mOnTrimVideoListener.onError("The maximum length of the video can be 30 seconds!");
-        } else {
-
-            mPlayView.setVisibility(View.VISIBLE);
-            mVideoView.pause();
-
-            MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-            mediaMetadataRetriever.setDataSource(getContext(), mSrc);
-            long METADATA_KEY_DURATION = Long.parseLong(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-            String mimeType = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
-            Log.e("Saved Trim", mimeType);
-            if (METADATA_KEY_DURATION < MIN_TIME_FRAME) {
-                if (mOnTrimVideoListener != null)
-                    mOnTrimVideoListener.onError("Video duration too short");
-                return;
+        try {
+            long videoLengthDifference = mRightProgressPos - mLeftProgressPos;
+            if (mSrc == null) {
+                mOnTrimVideoListener.onError("Unsupported video format.");
             }
-
-            if (!mVideoMimeTypeList.contains(mimeType)) {
-                if (mOnTrimVideoListener != null)
-                    mOnTrimVideoListener.onError("Unsupported video format. Accepted formats are .MPG, .MP4, .AVI, .FLV, .WMV.");
-                return;
-            }
-
-            if (!mimeType.equalsIgnoreCase("video/mp4")) {
-                if (mOnTrimVideoListener != null) {
-                    mOnTrimVideoListener.getResult(mSrc, mStartPosition, mEndPosition);
+            if (videoLengthDifference < 2000) {
+                mOnTrimVideoListener.onError("The minimum length of the video should be 2 seconds!");
+            } else if (videoLengthDifference > 35000) {
+                mOnTrimVideoListener.onError("The maximum length of the video can be 30 seconds!");
+            } else {
+//            mPlayView.setVisibility(View.VISIBLE);
+                playVideoOrPause();
+                pauseProgressHandlerAndRemoveCallBack();
+                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                mediaMetadataRetriever.setDataSource(getContext(), mSrc);
+                long METADATA_KEY_DURATION = Long.parseLong(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+                String mimeType = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
+                Log.e("Saved Trim", mimeType);
+                if (METADATA_KEY_DURATION < MIN_TIME_FRAME) {
+                    if (mOnTrimVideoListener != null)
+                        mOnTrimVideoListener.onError("Video duration too short");
                     return;
                 }
-            }
 
-
-            final File file = new File(mSrc.getPath());
-
-            if (mTimeVideo < MIN_TIME_FRAME) {
-
-                if ((METADATA_KEY_DURATION - mEndPosition) > (MIN_TIME_FRAME - mTimeVideo)) {
-                    mEndPosition += (MIN_TIME_FRAME - mTimeVideo);
-                } else if (mStartPosition > (MIN_TIME_FRAME - mTimeVideo)) {
-                    mStartPosition -= (MIN_TIME_FRAME - mTimeVideo);
+                if (!mVideoMimeTypeList.contains(mimeType)) {
+                    if (mOnTrimVideoListener != null)
+                        mOnTrimVideoListener.onError("Unsupported video format. Accepted formats are .MPG, .MP4, .AVI, .FLV, .WMV.");
+                    return;
                 }
-            }
 
-            //notify that video trimming started
-            if (mOnTrimVideoListener != null)
-                mOnTrimVideoListener.onTrimStarted();
+                if (!mimeType.equalsIgnoreCase("video/mp4")) {
+                    if (mOnTrimVideoListener != null && forStory) {
+                        mOnTrimVideoListener.getResult(mSrc, mLeftProgressPos, mRightProgressPos, true);
+                        return;
+                    } else if (mOnTrimVideoListener != null) {
+                        mOnTrimVideoListener.getResult(mSrc, mLeftProgressPos, mRightProgressPos);
+                        return;
+                    }
+                }
 
-            BackgroundExecutor.execute(
-                    new BackgroundExecutor.Task("", 0L, "") {
-                        @Override
-                        public void execute() {
-                            try {
-                                TrimVideoUtils.startTrim(mContext, file, getDestinationPath(), mStartPosition, mEndPosition, mOnTrimVideoListener);
-                            } catch (final Throwable e) {
-                                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
+                final File file = new File(mSrc.getPath());
+
+
+//            if (mTimeVideo < MIN_TIME_FRAME) {
+//
+//                if ((METADATA_KEY_DURATION - mRightProgressPos) > (MIN_TIME_FRAME - mTimeVideo)) {
+//                    mEndPosition += (MIN_TIME_FRAME - mTimeVideo);
+//                } else if (mStartPosition > (MIN_TIME_FRAME - mTimeVideo)) {
+//                    mStartPosition -= (MIN_TIME_FRAME - mTimeVideo);
+//                }
+//            }
+
+                //notify that video trimming started
+                if (mOnTrimVideoListener != null)
+                    mOnTrimVideoListener.onTrimStarted();
+
+                BackgroundExecutor.execute(
+                        new BackgroundExecutor.Task("", 0L, "") {
+                            @Override
+                            public void execute() {
+                                try {
+
+                                    Log.e(TAG, " mLeftProgressPos: " + mLeftProgressPos + " mRightProgressPos: " + mRightProgressPos);
+                                    final String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+                                    String fileName = "";
+                                    String deviceId = getDeviceUniqueId(mContext);
+                                    if (deviceId != null && !deviceId.isEmpty()) {
+                                        fileName = "MP4_" + timeStamp + "_" + deviceId + ".mp4";
+                                    } else {
+                                        fileName = "MP4_" + timeStamp + ".mp4";
+                                    }
+                                    final String filePath = getDestinationPath(forStory) + fileName;
+                                    File file2 = new File(filePath);
+                                    TrimVideoUtil2.startTrim(mContext, file, file2, (int) mLeftProgressPos, (int) mRightProgressPos, mOnTrimVideoListener,forStory);
+                                } catch (IndexOutOfBoundsException e) {
+                                    mOnTrimVideoListener.onError(mContext.getString(R.string.unsuported_media));
+                                } catch (Exception e) {
+                                    mOnTrimVideoListener.onError(mContext.getString(R.string.unsuported_media));
+                                } catch (final Throwable e) {
+                                    mOnTrimVideoListener.onError(mContext.getString(R.string.unsuported_media));
+                                    Thread.getDefaultUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
+                                }
                             }
                         }
-                    }
-            );
-        }
-
-    }
-
-    private void onClickVideoPlayPause() {
-        if (mVideoView.isPlaying()) {
-            mPlayView.setVisibility(View.VISIBLE);
-            mMessageHandler.removeMessages(SHOW_PROGRESS);
-            mVideoView.pause();
-        } else {
-            mPlayView.setVisibility(View.GONE);
-
-            if (mResetSeekBar) {
-                mResetSeekBar = false;
-                mVideoView.seekTo(mStartPosition);
+                );
             }
 
-            mMessageHandler.sendEmptyMessage(SHOW_PROGRESS);
-            mVideoView.start();
+        } catch (Exception e) {
         }
+    }
+
+    public void pauseProgressHandlerAndRemoveCallBack() {
+        pauseVideo();
+    }
+
+    public static String getDeviceUniqueId(Context context) {
+        String deviceId = "";
+
+        try {
+            deviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+            return deviceId;
+
+        } catch (Exception e) {
+
+            Log.e(TAG, e + "");
+            TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+                deviceId = telephonyManager.getDeviceId();
+                return deviceId;
+            }
+        }
+
+        return deviceId;
     }
 
     private void onCancelClicked() {
-        mVideoView.stopPlayback();
+        if (mVideoView != null && mVideoView.isPlaying())
+            mVideoView.stopPlayback();
+        pauseRedProgressAnimation();
         if (mOnTrimVideoListener != null) {
             mOnTrimVideoListener.cancelAction();
         }
     }
 
-    private String getDestinationPath() {
+    private String getDestinationPath(boolean forStory) {
         try {
             if (mFinalPath == null) {
 
                 File mediaStorageDir = new File("/storage/emulated/0/Android/data/in.publicam.vitunes/data/");
                 if (!mediaStorageDir.exists()) {
-                   mediaStorageDir.mkdirs();
+                    mediaStorageDir.mkdirs();
                 }
-
-                String videoStoragePath = mediaStorageDir + "/uploadedVideos";
+                String videoStoragePath="";
+                if (!forStory) {
+                    videoStoragePath = mediaStorageDir + "/uploadedVideos";
+                }else{
+                    videoStoragePath = mediaStorageDir + "/TuneStory";
+                }
                 createDirectory(videoStoragePath);
                 mFinalPath = videoStoragePath + File.separator;
                 Log.d(TAG, "Using default path " + mFinalPath);
             }
         } catch (Exception e) {
-           Log.e(TAG, "",e);
+            Log.e(TAG, "", e);
         }
         return mFinalPath;
     }
@@ -392,206 +542,98 @@ public class JetVideoTrimmer extends FrameLayout {
                 new File(filePath).mkdirs();
             }
         } catch (Exception e) {
-           Log.e(TAG, "", e);
+            Log.e(TAG, "", e);
         }
     }
 
-    private void onPlayerIndicatorSeekChanged(int progress, boolean fromUser) {
-
-        int duration = (int) ((mDuration * progress) / 1000L);
-
-        if (fromUser) {
-            if (duration < mStartPosition) {
-                setProgressBarPosition(mStartPosition);
-                duration = mStartPosition;
-            } else if (duration > mEndPosition) {
-                setProgressBarPosition(mEndPosition);
-                duration = mEndPosition;
-            }
-            setTimeVideo(duration);
-        }
-    }
-
-    private void onPlayerIndicatorSeekStart() {
-        mMessageHandler.removeMessages(SHOW_PROGRESS);
-        mVideoView.pause();
-        mPlayView.setVisibility(View.VISIBLE);
-        notifyProgressUpdate(false);
-    }
-
-    private void onPlayerIndicatorSeekStop(@NonNull SeekBar seekBar) {
-        mMessageHandler.removeMessages(SHOW_PROGRESS);
-        mVideoView.pause();
-        mPlayView.setVisibility(View.VISIBLE);
-
-        int duration = (int) ((mDuration * seekBar.getProgress()) / 1000L);
-        mVideoView.seekTo(duration);
-        setTimeVideo(duration);
-        notifyProgressUpdate(false);
-    }
-
-    private void onVideoPrepared(@NonNull MediaPlayer mp) {
+    private void onVideoPrepared() {
         // Adjust the size of the video
         // so it fits on the screen
-        int videoWidth = mp.getVideoWidth();
-        int videoHeight = mp.getVideoHeight();
-        float videoProportion = (float) videoWidth / (float) videoHeight;
-        int screenWidth = mLinearVideo.getWidth();
-        int screenHeight = mLinearVideo.getHeight();
-        float screenProportion = (float) screenWidth / (float) screenHeight;
-        ViewGroup.LayoutParams lp = mVideoView.getLayoutParams();
 
-        if (videoProportion > screenProportion) {
-            lp.width = screenWidth;
-            lp.height = (int) ((float) screenWidth / videoProportion);
-        } else {
-            lp.width = (int) (videoProportion * (float) screenHeight);
-            lp.height = screenHeight;
-        }
-        mVideoView.setLayoutParams(lp);
-
-        mPlayView.setVisibility(View.VISIBLE);
+        customVideoControls = new CustomVideoControls(mContext);
+        customVideoControls.setPreviousButtonEnabled(false);
+        customVideoControls.setNextButtonEnabled(false);
+        customVideoControls.setPlayPauseDrawables(getResources().getDrawable(R.drawable.play), getResources().getDrawable(R.drawable.pause));
+        mVideoView.setControls(customVideoControls);
 
         mDuration = mVideoView.getDuration();
-        setSeekBarPosition();
-
-
-        setTimeFrames();
-        setTimeVideo(0);
-        mTextTime.setText(String.format("%s", stringForTime(mEndPosition - mStartPosition), ""));
-        if (mJetVideoListener != null) {
-            mJetVideoListener.onVideoPrepared();
-        }
-    }
-
-    private void setSeekBarPosition() {
-
-        if (mDuration >= mMaxDuration) {
-            mStartPosition = mDuration / 2 - mMaxDuration / 2;
-            mEndPosition = mDuration / 2 + mMaxDuration / 2;
-
-            mRangeSeekBarView.setThumbValue(0, (mStartPosition * 100) / mDuration);
-            mRangeSeekBarView.setThumbValue(1, (mEndPosition * 100) / mDuration);
-
+        mVideoView.setOnTouchListener(new ActivitySwipeDetector((Activity) mContext));
+        customVideoControls.playPausebtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playVideoOrPause();
+            }
+        });
+        seekTo(mLeftProgressPos);
+        initRangeSeekBarView();
+        startShootVideoThumbs(mContext, mSrc, mThumbsTotalCount, 0, mDuration);
+        if (mVideoView.getDuration() < (MyVideoTrimUtil.MIN_SHOOT_DURATION + 1000)) {
+            ((TextView) mVideoShootTipTv).setText(mContext.getString(R.string.drag_to_select_clips_less_30_seconds_of_posting));
         } else {
-            mStartPosition = 0;
-            mEndPosition = mDuration;
-        }
-
-        setProgressBarPosition(mStartPosition);
-        mVideoView.seekTo(mStartPosition);
-
-        mTimeVideo = mDuration;
-        mRangeSeekBarView.initMaxWidth();
-    }
-
-    private void setTimeFrames() {
-        String seconds = getContext().getString(R.string.short_seconds);
-
-        mTextTime.setText(String.format("%s", stringForTime(mEndPosition - mStartPosition), ""));
-
-//        mTextTimeFrame.setText(String.format("%s %s - %s %s", stringForTime(mStartPosition), seconds, stringForTime(mEndPosition), seconds));
-        mTextTimeFrame.setText(String.format("%s %s - %s %s", stringForTime(mStartPosition), "", stringForTime(mEndPosition), ""));
-    }
-
-    private void setTimeVideo(int position) {
-//        String seconds = getContext().getString(R.string.short_seconds);
-//        mTextTime.setText(String.format("%s %s", stringForTime(position), seconds));
-        mTextTime.setText(String.format("%s %s", stringForTime(position), ""));
-    }
-
-    private void onSeekThumbs(int index, int value) {
-
-        // Log.e(TAG, "onSeekThumbs: Index: " + index + " Value: " + value);
-
-        switch (index) {
-            case Thumb.LEFT: {
-                mStartPosition = (int) ((mDuration * value) / 100L);
-                mVideoView.seekTo(mStartPosition);
-                break;
-            }
-            case Thumb.RIGHT: {
-                mEndPosition = (int) ((mDuration * value) / 100L);
-                break;
-            }
-        }
-
-        /*Log.e(TAG, "onSeekThumbs: before operation StartPosition: "+mStartPosition+" EndPosition: "+mEndPosition);
-
-        int mode = (mEndPosition - mStartPosition)%30000;
-
-        if(mode > 0) {
-            Log.e(TAG, "onSeekThumbs: Diffrence mode: " + mode);
-            mStartPosition = mStartPosition + mode;
-        }*/
-
-        setProgressBarPosition(mStartPosition);
-        //Log.e(TAG, "onSeekThumbs: StartPosition: " + mStartPosition + " EndPosition: " + mEndPosition);
-
-        setTimeFrames();
-
-        mTimeVideo = mEndPosition - mStartPosition;
-        //Log.e(TAG, "onSeekThumbs: TimeVideo: " + mTimeVideo);
-    }
-
-    private void onStopSeekThumbs() {
-        mMessageHandler.removeMessages(SHOW_PROGRESS);
-        mVideoView.pause();
-        mPlayView.setVisibility(View.VISIBLE);
-    }
-
-    private void onVideoCompleted() {
-        mVideoView.seekTo(mStartPosition);
-    }
-
-    private void notifyProgressUpdate(boolean all) {
-        if (mDuration == 0) return;
-
-        int position = mVideoView.getCurrentPosition();
-        if (all) {
-            for (OnProgressVideoListener item : mListeners) {
-                item.updateProgress(position, mDuration, ((position * 100) / mDuration));
-            }
-        } else {
-            mListeners.get(1).updateProgress(position, mDuration, ((position * 100) / mDuration));
+            ((TextView) mVideoShootTipTv).setText(mContext.getString(R.string.drag_to_select_clips_within_30_seconds_of_posting));
         }
     }
 
-    private void updateVideoProgress(int time) {
-        if (mVideoView == null) {
-            return;
-        }
+    private void startShootVideoThumbs(final Context context, final Uri videoUri, int totalThumbsCount, long startPosition, long endPosition) {
+        MyVideoTrimUtil.shootVideoThumbInBackground(context, videoUri, totalThumbsCount, startPosition, endPosition,
+                new SingleCallback<Bitmap, Integer>() {
+                    @Override
+                    public void onSingleCallback(final Bitmap bitmap, final Integer interval) {
+                        if (bitmap != null) {
+                            UiThreadExecutor.runTask("", new Runnable() {
+                                @Override
+                                public void run() {
+                                    mVideoThumbAdapter.addBitmaps(bitmap);
+                                }
+                            }, 0L);
+                        }
+                    }
+                });
+    }
 
-        if (time >= mEndPosition) {
-            mMessageHandler.removeMessages(SHOW_PROGRESS);
+    private void seekTo(long msec) {
+        mVideoView.seekTo((int) msec);
+        if (mVideoView.isPlaying()) {
             mVideoView.pause();
-            mPlayView.setVisibility(View.VISIBLE);
-            mResetSeekBar = true;
-            return;
+            mRedProgressIcon.setVisibility(GONE);
+            setPlayPauseViewIcon(false);
         }
-
-        if (mHolderTopView != null) {
-            // use long to avoid overflow
-            setProgressBarPosition(time);
-        }
-        setTimeVideo(time);
+        Log.d(TAG, "seekTo = " + msec);
     }
 
-    private void setProgressBarPosition(int position) {
-        if (mDuration > 0) {
-            long pos = 1000L * position / mDuration;
-            mHolderTopView.setProgress((int) pos);
-        }
+    private void setPlayPauseViewIcon(boolean isPlaying) {
+//        mPlayView.setImageResource(isPlaying ? R.drawable.play : R.drawable.pause);
     }
 
-    /**
-     * Set video information visibility.
-     * For now this is for debugging
-     *
-     * @param visible whether or not the videoInformation will be visible
-     */
-    public void setVideoInformationVisibility(boolean visible) {
-        mTimeInfoContainer.setVisibility(visible ? VISIBLE : GONE);
+    private void updateVideoProgress() {
+        try {
+            long currentPosition = mVideoView.getCurrentPosition();
+//        Log.d(TAG, "updateVideoProgress currentPosition = " + currentPosition);
+            if (currentPosition >= (mRightProgressPos)) {
+                mRedProgressBarPos = mLeftProgressPos;
+                pauseRedProgressAnimation();
+                onVideoPause();
+            } else {
+                if (mAnimationHandler != null)
+                    mAnimationHandler.post(mAnimationRunnable);
+                mRedProgressBarPos = mLeftProgressPos;
+            }
+        } catch (Exception e) {
+        }
+
+    }
+
+    public void onVideoPause() {
+        try {
+            if (mVideoView != null && mVideoView.isPlaying()) {
+                seekTo(mLeftProgressPos);//Reset on video pause
+                mVideoView.pause();
+                setPlayPauseViewIcon(false);
+                mRedProgressIcon.setVisibility(GONE);
+            }
+        } catch (Exception e) {
+        }
+
     }
 
     /**
@@ -599,7 +641,6 @@ public class JetVideoTrimmer extends FrameLayout {
      *
      * @param onTrimVideoListener interface for events
      */
-    @SuppressWarnings("unused")
     public void setOnTrimVideoListener(OnTrimVideoListener onTrimVideoListener) {
         mOnTrimVideoListener = onTrimVideoListener;
     }
@@ -635,65 +676,105 @@ public class JetVideoTrimmer extends FrameLayout {
     }
 
     /**
-     * Set the maximum duration of the trimmed video.
-     * The trimmer interface wont allow the user to set duration longer than maxDuration
-     *
-     * @param maxDuration the maximum duration of the trimmed video in seconds
-     */
-    @SuppressWarnings("unused")
-    public void setMaxDuration(int maxDuration) {
-        mMaxDuration = maxDuration * 1000;
-    }
-
-    /**
      * Sets the uri of the video to be trimmer
      *
      * @param videoURI Uri of the video
      */
-    @SuppressWarnings("unused")
     public void setVideoURI(final Uri videoURI) {
         mSrc = videoURI;
-
-        if (mOriginSizeFile == 0) {
-            File file = new File(mSrc.getPath());
-
-            mOriginSizeFile = file.length();
-            long fileSizeInKB = mOriginSizeFile / 1024;
-
-            if (fileSizeInKB > 1000) {
-                long fileSizeInMB = fileSizeInKB / 1024;
-                mTextSize.setText(String.format("%s %s", fileSizeInMB, getContext().getString(R.string.megabyte)));
-            } else {
-                mTextSize.setText(String.format("%s %s", fileSizeInKB, getContext().getString(R.string.kilobyte)));
-            }
-        }
-
         mVideoView.setVideoURI(mSrc);
         mVideoView.requestFocus();
-
-        mTimeLineView.setVideo(mSrc);
     }
 
-    private static class MessageHandler extends Handler {
-
-        @NonNull
-        private final WeakReference<JetVideoTrimmer> mView;
-
-        MessageHandler(JetVideoTrimmer view) {
-            mView = new WeakReference<>(view);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            JetVideoTrimmer view = mView.get();
-            if (view == null || view.mVideoView == null) {
-                return;
-            }
-
-            view.notifyProgressUpdate(true);
-            if (view.mVideoView.isPlaying()) {
-                sendEmptyMessageDelayed(0, 10);
+    private void pauseAndDurationViewHandlingOnTouchDown() {
+        if (mVideoView != null) {
+            if (mVideoView.getVideoControlsCore().isVisible()) {
+                mVideoView.getVideoControlsCore().hide(true);
+            } else {
+                mVideoView.getVideoControlsCore().show();
             }
         }
     }
+
+    public void setForStory(boolean forStory) {
+        this.forStory = forStory;
+
+    }
+
+    class ActivitySwipeDetector implements OnTouchListener {
+
+
+        static final String logTag = "ActivitySwipeDetector";
+        private Activity activity;
+        static final int MIN_DISTANCE = 100;
+        private float downX, downY, upX, upY;
+
+        public ActivitySwipeDetector(Activity activity) {
+            this.activity = activity;
+        }
+
+        public void onRightSwipe() {
+            Log.e(logTag, "RightToLeftSwipe!");
+        }
+
+        public void onLeftSwipe() {
+            Log.e(logTag, "LeftToRightSwipe!");
+
+        }
+
+        public void onDownSwipe() {
+            Log.e(logTag, "onTopToBottomSwipe!");
+        }
+
+        public void onUpSwipe() {
+            Log.e(logTag, "onBottomToTopSwipe!");
+
+        }
+
+        public boolean onTouch(View v, MotionEvent event) {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN: {
+                    downX = event.getX();
+                    downY = event.getY();
+
+                    return true;
+                }
+                case MotionEvent.ACTION_UP: {
+                    upX = event.getX();
+                    upY = event.getY();
+
+                    float deltaX = downX - upX;
+                    float deltaY = downY - upY;
+
+                    // swipe horizontal?
+                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                        if (Math.abs(deltaX) > MIN_DISTANCE) {
+                            // left or right
+                            if (deltaX > 0) {
+                                this.onRightSwipe();
+                                return true;
+                            }
+
+                            if (deltaX < 0) {
+                                this.onLeftSwipe();
+                                return true;
+                            }
+                        } else {
+                            Log.e(logTag, "Horizontal Swipe was only " + Math.abs(deltaX) + " long, need at least " + MIN_DISTANCE);
+                            return false; // We don't consume the event
+                        }
+                    }
+                    // swipe vertical?
+                    else {
+                        pauseAndDurationViewHandlingOnTouchDown();
+                    }
+
+                    return true;
+                }
+            }
+            return false;
+        }
+
+    }
+
 }

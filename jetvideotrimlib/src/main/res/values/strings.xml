@@ -8,4 +8,7 @@
     <!--Trimmer-->
     <string name="trimming_progress">Trimming your video...</string>
     <string name="file_size_more_error_msg">Video size can not be more than 50 mb.</string>
+    <string name="drag_to_select_clips_within_30_seconds_of_posting">Drag the selector or scroll video to trim</string>
+    <string name="drag_to_select_clips_less_30_seconds_of_posting">Videos less than 15 sec can not be trimmed</string>
+    <string name="unsuported_media">Unsupported Media</string>
 </resources>

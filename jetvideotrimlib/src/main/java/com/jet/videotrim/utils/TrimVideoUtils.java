@@ -27,13 +27,12 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 
 import com.coremedia.iso.boxes.Container;
 import com.googlecode.mp4parser.FileDataSourceViaHeapImpl;
@@ -58,7 +57,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
-
+@Deprecated
 public class TrimVideoUtils {
 
     private static final String TAG = TrimVideoUtils.class.getSimpleName();

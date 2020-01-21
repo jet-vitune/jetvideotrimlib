@@ -24,14 +24,14 @@
 package com.jet.videotrim.interfaces;
 
 
-import com.jet.videotrim.view.RangeSeekBarView;
+import com.jet.videotrim.view.RangeSeekBarView2;
 
 public interface OnRangeSeekBarListener {
-    void onCreate(RangeSeekBarView rangeSeekBarView, int index, float value);
+    void onCreate(RangeSeekBarView2 rangeSeekBarView, int index, float value);
 
-    void onSeek(RangeSeekBarView rangeSeekBarView, int index, float value);
+    void onSeek(RangeSeekBarView2 rangeSeekBarView, int index, float value);
 
-    void onSeekStart(RangeSeekBarView rangeSeekBarView, int index, float value);
+    void onSeekStart(RangeSeekBarView2 rangeSeekBarView, int index, float value);
 
-    void onSeekStop(RangeSeekBarView rangeSeekBarView, int index, float value);
+    void onSeekStop(RangeSeekBarView2 rangeSeekBarView, int index, float value);
 }

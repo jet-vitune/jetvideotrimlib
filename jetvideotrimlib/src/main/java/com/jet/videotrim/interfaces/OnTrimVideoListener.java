@@ -29,7 +29,22 @@ public interface OnTrimVideoListener {
 
     void onTrimStarted();
 
-    void getResult(final Uri uri,long startMS,long endMS);
+    /**
+     * For UGC Upload
+     * @param uri
+     * @param startMS
+     * @param endMS
+     */
+    void getResult(final Uri uri, long startMS, long endMS);
+
+    /**
+     * For Story Upload
+     * @param uri
+     * @param startMS
+     * @param endMS
+     * @param forStory
+     */
+    void getResult(final Uri uri, long startMS, long endMS, boolean forStory);
 
     void cancelAction();
 
