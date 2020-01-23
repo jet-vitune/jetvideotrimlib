@@ -1,13 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-  ~ Copyright (c) 2018, $today.date/4. JetSynthesys Pvt. Ltd.
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  -->
-
-<com.devbrackets.android.exomedia.ui.widget.FitsSystemWindowRelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<com.devbrackets.android.exomedia.ui.widget.FitsSystemWindowRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -19,10 +11,10 @@
         android:layout_alignParentTop="true"
         android:background="@drawable/exomedia_default_controls_text_background"
         android:orientation="vertical"
-        android:paddingBottom="16dp"
         android:paddingLeft="16dp"
-        android:paddingRight="16dp"
         android:paddingTop="16dp"
+        android:paddingRight="16dp"
+        android:paddingBottom="16dp"
         android:visibility="gone"
         tools:visibility="visible">
 
@@ -52,18 +44,10 @@
             tools:text="The Video Artist" />
     </LinearLayout>
 
-
-
-
-    <!--android:id="@+id/layout_exomedia_controls"-->
-
-
-
     <RelativeLayout
         android:id="@+id/exomedia_controls_interactive_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        >
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -80,8 +64,8 @@
                 android:layout_height="0dp"
                 android:layout_marginRight="@dimen/exomedia_min_button_height"
                 android:background="@android:color/transparent"
-                android:minHeight="@dimen/exomedia_min_button_height"
                 android:minWidth="@dimen/exomedia_min_button_height"
+                android:minHeight="@dimen/exomedia_min_button_height"
                 android:visibility="gone"
                 tools:ignore="ContentDescription,RtlHardcoded"
                 tools:visibility="gone" />
@@ -91,8 +75,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@android:color/transparent"
-                android:minHeight="@dimen/exomedia_min_button_height"
                 android:minWidth="@dimen/exomedia_min_button_height"
+                android:minHeight="@dimen/exomedia_min_button_height"
                 android:src="@drawable/play_button"
                 tools:ignore="ContentDescription" />
 
@@ -102,8 +86,8 @@
                 android:layout_height="0dp"
                 android:layout_marginLeft="@dimen/exomedia_min_button_height"
                 android:background="@android:color/transparent"
-                android:minHeight="@dimen/exomedia_min_button_height"
                 android:minWidth="@dimen/exomedia_min_button_height"
+                android:minHeight="@dimen/exomedia_min_button_height"
                 android:visibility="gone"
                 tools:ignore="ContentDescription,RtlHardcoded"
                 tools:visibility="gone" />
@@ -112,16 +96,16 @@
         <RelativeLayout
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
-            android:visibility="gone"
             android:background="@drawable/exomedia_default_controls_interactive_background"
             android:orientation="vertical"
+            android:paddingTop="16dp"
             android:paddingBottom="16dp"
-            android:paddingTop="16dp">
+            android:visibility="gone">
 
             <SeekBar
                 android:id="@+id/exomedia_controls_video_seek"
@@ -136,8 +120,8 @@
                 android:id="@+id/exomedia_controls_end_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignRight="@+id/exomedia_controls_video_seek"
                 android:layout_below="@+id/exomedia_controls_video_seek"
+                android:layout_alignRight="@+id/exomedia_controls_video_seek"
                 android:paddingLeft="5dp"
                 android:textColor="@android:color/white"
                 tools:ignore="RtlHardcoded"
@@ -147,8 +131,8 @@
                 android:id="@+id/exomedia_controls_current_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignLeft="@+id/exomedia_controls_video_seek"
                 android:layout_below="@+id/exomedia_controls_video_seek"
+                android:layout_alignLeft="@+id/exomedia_controls_video_seek"
                 android:paddingRight="5dp"
                 android:textColor="@android:color/white"
                 tools:ignore="RtlHardcoded"
@@ -160,13 +144,4 @@
     </RelativeLayout>
 
 
-
-<!--    <ProgressBar-->
-<!--        android:id="@+id/exomedia_controls_video_loading"-->
-<!--        style="?android:progressBarStyleLarge"-->
-<!--        android:layout_width="@dimen/exomedia_min_button_height"-->
-<!--        android:layout_height="@dimen/exomedia_min_button_height"-->
-<!--        android:layout_centerInParent="true"-->
-<!--        android:indeterminateTint="@color/orange_postcall"-->
-<!--        android:visibility="gone" />-->
 </com.devbrackets.android.exomedia.ui.widget.FitsSystemWindowRelativeLayout>
