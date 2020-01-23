@@ -27,11 +27,10 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.util.AttributeSet;
-import android.view.View;
-
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import android.util.AttributeSet;
+import android.view.View;
 
 import com.jet.videotrim.R;
 import com.jet.videotrim.interfaces.OnProgressVideoListener;

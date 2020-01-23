@@ -23,6 +23,23 @@
  */
 package com.jet.videotrim.view;
 
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+
+import com.jet.videotrim.R;
+import com.jet.videotrim.interfaces.OnRangeSeekBarListener;
+
+import java.util.ArrayList;
+import java.util.List;
+
 @Deprecated
 public class RangeSeekBarView {
 

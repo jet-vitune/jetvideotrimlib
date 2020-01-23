@@ -6,5 +6,5 @@ package com.jet.videotrim;
  * @Jetsynthesys manish.singh@jetsynthesys.com
  */
 public interface SingleCallback<T, V> {
-    void onSingleCallback(T t, V v);
+    void onSingleCallback(T t,V v);
 }

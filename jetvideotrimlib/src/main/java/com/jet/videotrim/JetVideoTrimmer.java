@@ -30,8 +30,15 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.AttributeSet;
@@ -39,17 +46,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.devbrackets.android.exomedia.listener.OnCompletionListener;
 import com.devbrackets.android.exomedia.listener.OnErrorListener;
@@ -345,7 +348,7 @@ public class JetVideoTrimmer extends FrameLayout {
             if (mRedProgressIcon.getVisibility() == View.GONE) {
                 mRedProgressIcon.setVisibility(View.VISIBLE);
             }
-            final LayoutParams params = (LayoutParams) mRedProgressIcon.getLayoutParams();
+            final FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mRedProgressIcon.getLayoutParams();
             int start = (int) (MyVideoTrimUtil.RECYCLER_VIEW_PADDING + (mRedProgressBarPos - scrollPos) * averagePxMs);
             int end = (int) (MyVideoTrimUtil.RECYCLER_VIEW_PADDING + (mRightProgressPos - scrollPos) * averagePxMs);
             mRedProgressAnimator = ValueAnimator.ofInt(start, end).setDuration((mRightProgressPos - scrollPos) - (mRedProgressBarPos - scrollPos));
@@ -701,7 +704,7 @@ public class JetVideoTrimmer extends FrameLayout {
 
     }
 
-    class ActivitySwipeDetector implements OnTouchListener {
+    class ActivitySwipeDetector implements View.OnTouchListener {
 
 
         static final String logTag = "ActivitySwipeDetector";

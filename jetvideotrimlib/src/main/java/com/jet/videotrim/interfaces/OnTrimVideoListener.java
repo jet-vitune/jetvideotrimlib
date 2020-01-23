@@ -35,7 +35,7 @@ public interface OnTrimVideoListener {
      * @param startMS
      * @param endMS
      */
-    void getResult(final Uri uri, long startMS, long endMS);
+    void getResult(final Uri uri,long startMS,long endMS);
 
     /**
      * For Story Upload
@@ -44,7 +44,7 @@ public interface OnTrimVideoListener {
      * @param endMS
      * @param forStory
      */
-    void getResult(final Uri uri, long startMS, long endMS, boolean forStory);
+    void getResult(final Uri uri,long startMS,long endMS,boolean forStory);
 
     void cancelAction();
 

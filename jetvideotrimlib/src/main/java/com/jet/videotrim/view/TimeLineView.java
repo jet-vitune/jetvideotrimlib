@@ -28,12 +28,11 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import androidx.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.LongSparseArray;
 import android.view.View;
-
-import androidx.annotation.NonNull;
 
 import com.jet.videotrim.R;
 import com.jet.videotrim.utils.BackgroundExecutor;
