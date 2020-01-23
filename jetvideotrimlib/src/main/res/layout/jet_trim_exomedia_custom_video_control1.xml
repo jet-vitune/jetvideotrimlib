@@ -22,7 +22,7 @@
             android:id="@+id/exomedia_controls_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="color/jet_trim_white_color"
+            android:textColor="@color/jet_trim_white_color"
             android:textSize="16sp"
             android:textStyle="bold"
             tools:text="The Video Title" />
@@ -31,7 +31,7 @@
             android:id="@+id/exomedia_controls_sub_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="color/jet_trim_white_color"
+            android:textColor="@color/jet_trim_white_color"
             android:textSize="14sp"
             tools:text="The Video Album" />
 
@@ -39,7 +39,7 @@
             android:id="@+id/exomedia_controls_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="color/jet_trim_white_color"
+            android:textColor="@color/jet_trim_white_color"
             android:textSize="14sp"
             tools:text="The Video Artist" />
     </LinearLayout>
@@ -123,7 +123,7 @@
                 android:layout_below="@+id/exomedia_controls_video_seek"
                 android:layout_alignRight="@+id/exomedia_controls_video_seek"
                 android:paddingLeft="5dp"
-                android:textColor="color/jet_trim_white_color"
+                android:textColor="@color/jet_trim_white_color"
                 tools:ignore="RtlHardcoded"
                 tools:text="1:06:29" />
 
@@ -134,7 +134,7 @@
                 android:layout_below="@+id/exomedia_controls_video_seek"
                 android:layout_alignLeft="@+id/exomedia_controls_video_seek"
                 android:paddingRight="5dp"
-                android:textColor="color/jet_trim_white_color"
+                android:textColor="@color/jet_trim_white_color"
                 tools:ignore="RtlHardcoded"
                 tools:text="1:23:49" />
 
