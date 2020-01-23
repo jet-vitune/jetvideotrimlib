@@ -3,8 +3,8 @@
 
     <gradient
         android:angle="135"
-        android:endColor="@color/orange_postcall"
-        android:startColor="@color/pink"
+        android:endColor="@color/jet_trim_orange_color"
+        android:startColor="@color/jet_trim_pink_color"
         android:type="linear" />
 
     <corners

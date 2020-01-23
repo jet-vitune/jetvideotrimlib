@@ -83,7 +83,7 @@ public class RangeSeekBarView {
 //
 //        mFirstRun = true;
 //        paint.setColor(0xff5c5c5c);
-//        int shadowColor = ContextCompat.getColor(getContext(), R.color.shadow_color);
+//        int shadowColor = ContextCompat.getColor(getContext(), R.color.jet_trim_shadow_color);
 //        mShadow.setAntiAlias(true);
 //        mShadow.setColor(shadowColor);
 //        mShadow.setAlpha(177);

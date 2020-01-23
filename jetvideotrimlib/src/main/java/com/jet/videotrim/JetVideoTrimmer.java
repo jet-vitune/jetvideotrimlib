@@ -129,7 +129,7 @@ public class JetVideoTrimmer extends FrameLayout {
     private void init(Context context) {
         mContext = context;
 
-        LayoutInflater.from(context).inflate(R.layout.view_time_line, this, true);
+        LayoutInflater.from(context).inflate(R.layout.jet_trim_view_time_line, this, true);
         mLinearVideo = ((RelativeLayout) findViewById(R.id.layout_surface_view));
         mVideoView = ((VideoView) findViewById(R.id.video_loader));
         mSeekBarLayout = findViewById(R.id.seekBarLayout);
@@ -556,7 +556,7 @@ public class JetVideoTrimmer extends FrameLayout {
         customVideoControls = new CustomVideoControls(mContext);
         customVideoControls.setPreviousButtonEnabled(false);
         customVideoControls.setNextButtonEnabled(false);
-        customVideoControls.setPlayPauseDrawables(getResources().getDrawable(R.drawable.play), getResources().getDrawable(R.drawable.pause));
+        customVideoControls.setPlayPauseDrawables(getResources().getDrawable(R.drawable.jet_trim_play), getResources().getDrawable(R.drawable.jet_trim_pause));
         mVideoView.setControls(customVideoControls);
 
         mDuration = mVideoView.getDuration();

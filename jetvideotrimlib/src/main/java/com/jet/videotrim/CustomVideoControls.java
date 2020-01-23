@@ -59,7 +59,7 @@ public class CustomVideoControls extends VideoControls {
 
     @Override
     protected int getLayoutResource() {
-        return R.layout.exomedia_custom_video_control1;
+        return R.layout.jet_trim_exomedia_custom_video_control1;
     }
 
     @Override

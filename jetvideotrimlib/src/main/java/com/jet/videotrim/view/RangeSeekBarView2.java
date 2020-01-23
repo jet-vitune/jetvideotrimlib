@@ -3,7 +3,6 @@ package com.jet.videotrim.view;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -73,7 +72,7 @@ public class RangeSeekBarView2 extends View {
     private double min_width = 1;
     private boolean notifyWhileDragging = false;
     private OnRangeSeekBarChangeListener mRangeSeekBarChangeListener;
-    private int whiteColorRes = getContext().getResources().getColor(R.color.white);
+    private int whiteColorRes = getContext().getResources().getColor(R.color.jet_trim_white_color);
 
     public enum Thumb {
         MIN, MAX
@@ -102,8 +101,8 @@ public class RangeSeekBarView2 extends View {
 
     private void init(Context context) {
         mScaledTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
-        thumbImageLeft = getBitmapFromDrawable(context, R.drawable.ic_video_thumb_handle_right);
-        thumbImageRight = getBitmapFromDrawable(context, R.drawable.ic_video_thumb_handle_left);
+        thumbImageLeft = getBitmapFromDrawable(context, R.drawable.jet_trim_ic_video_thumb_handle_right);
+        thumbImageRight = getBitmapFromDrawable(context, R.drawable.jet_trim_ic_video_thumb_handle_left);
 
         int width = thumbImageLeft.getWidth();
         int height = thumbImageLeft.getHeight();
@@ -118,7 +117,7 @@ public class RangeSeekBarView2 extends View {
         thumbPressedImage = thumbImageLeft;
         thumbWidth = newWidth;
         thumbHalfWidth = thumbWidth / 2;
-        int shadowColor = getContext().getResources().getColor(R.color.shadow_color);
+        int shadowColor = getContext().getResources().getColor(R.color.jet_trim_shadow_color);
         mShadow.setAntiAlias(true);
         mShadow.setColor(shadowColor);
 

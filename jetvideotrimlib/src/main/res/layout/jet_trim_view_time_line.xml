@@ -38,10 +38,10 @@
                 android:id="@+id/cancelBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@color/black_translucent"
+                android:background="@color/jet_trim_black_translucent"
                 android:gravity="center"
                 android:layout_gravity="center|left"
-                android:src="@drawable/ic_navigate"/>
+                android:src="@drawable/jet_trim_ic_navigate"/>
             <TextView
                 android:id="@+id/finishBtn"
                 android:layout_width="wrap_content"
@@ -50,7 +50,7 @@
                 android:layout_gravity="right|center"
                 android:text="Continue"
                 android:textAllCaps="false"
-                android:textColor="@color/white"
+                android:textColor="@color/jet_trim_white_color"
                 android:textStyle="bold"
                 android:visibility="visible"
                 android:textSize="@dimen/sp14"
@@ -58,7 +58,7 @@
                 android:paddingBottom="@dimen/dp5"
                 android:paddingRight="@dimen/dp10"
                 android:paddingLeft="@dimen/dp10"
-                android:background="@drawable/rounded_button_bg"/>
+                android:background="@drawable/jet_trim_rounded_button_bg"/>
 
         </FrameLayout>
 
@@ -81,7 +81,7 @@
             android:layout_alignParentTop="true"
             android:gravity="center"
             android:text="@string/drag_to_select_clips_within_30_seconds_of_posting"
-            android:textColor="@android:color/white"
+            android:textColor="@color/jet_trim_white_color"
             android:textSize="@dimen/sp13"
             android:textStyle="bold"/>
 
@@ -105,7 +105,7 @@
                 android:layout_gravity="bottom"
                 android:layout_marginLeft="@dimen/dp35"
                 android:contentDescription="@null"
-                android:src="@drawable/icon_seek_bar" />
+                android:src="@drawable/jet_trim_icon_seek_bar" />
 
             <LinearLayout
                 android:layout_width="match_parent"
