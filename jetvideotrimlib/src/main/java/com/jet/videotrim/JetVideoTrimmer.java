@@ -116,6 +116,7 @@ public class JetVideoTrimmer extends FrameLayout {
     private CustomVideoViewModel customVideoViewModel;
     private Handler handler = new Handler();
     private boolean forStory;
+    private TextView titleTrim;
 
     public JetVideoTrimmer(@NonNull Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -135,10 +136,12 @@ public class JetVideoTrimmer extends FrameLayout {
         mSeekBarLayout = findViewById(R.id.seekBarLayout);
         mVideoShootTipTv = findViewById(R.id.video_shoot_tip);
         mRedProgressIcon = findViewById(R.id.positionIcon);
+        titleTrim = findViewById(R.id.title_trim);
         mVideoMimeTypeList = new ArrayList<>();
         initRecyclerView();
         addVideoMimeType();
         setUpListeners();
+
     }
 
     private void initRangeSeekBarView() {
@@ -700,7 +703,11 @@ public class JetVideoTrimmer extends FrameLayout {
     }
 
     public void setForStory(boolean forStory) {
-        this.forStory = forStory;
+        if (forStory){
+            titleTrim.setVisibility(VISIBLE);
+        }else{
+            titleTrim.setVisibility(GONE);
+        }
 
     }
 
