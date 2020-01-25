@@ -703,6 +703,7 @@ public class JetVideoTrimmer extends FrameLayout {
     }
 
     public void setForStory(boolean forStory) {
+        this.forStory = forStory;
         if (forStory){
             titleTrim.setVisibility(VISIBLE);
         }else{
