@@ -117,6 +117,7 @@ public class JetVideoTrimmer extends FrameLayout {
     private Handler handler = new Handler();
     private boolean forStory;
     private TextView titleTrim;
+    private TextView continueTXT;
 
     public JetVideoTrimmer(@NonNull Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -138,6 +139,7 @@ public class JetVideoTrimmer extends FrameLayout {
         mRedProgressIcon = findViewById(R.id.positionIcon);
         titleTrim = findViewById(R.id.title_trim);
         mVideoMimeTypeList = new ArrayList<>();
+        continueTXT = (TextView) findViewById(R.id.finishBtn);
         initRecyclerView();
         addVideoMimeType();
         setUpListeners();
@@ -275,9 +277,10 @@ public class JetVideoTrimmer extends FrameLayout {
             }
         });
 
-        findViewById(R.id.finishBtn).setOnClickListener(new OnClickListener() {
+        continueTXT.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
+                disableContinueButton();
                 onSaveClicked();
             }
         });
@@ -287,12 +290,6 @@ public class JetVideoTrimmer extends FrameLayout {
                 videoCompleted();
             }
         });
-//        mPlayView.setOnClickListener(new OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                playVideoOrPause();
-//            }
-//        });
         mVideoView.setOnErrorListener(new OnErrorListener() {
             @Override
             public boolean onError(Exception e) {
@@ -398,13 +395,15 @@ public class JetVideoTrimmer extends FrameLayout {
             long videoLengthDifference = mRightProgressPos - mLeftProgressPos;
             if (mSrc == null) {
                 mOnTrimVideoListener.onError("Unsupported video format.");
+                enableContinueButton();
             }
             if (videoLengthDifference < 2000) {
                 mOnTrimVideoListener.onError("The minimum length of the video should be 2 seconds!");
+                enableContinueButton();
             } else if (videoLengthDifference > 35000) {
                 mOnTrimVideoListener.onError("The maximum length of the video can be 30 seconds!");
+                enableContinueButton();
             } else {
-//            mPlayView.setVisibility(View.VISIBLE);
                 playVideoOrPause();
                 pauseProgressHandlerAndRemoveCallBack();
                 MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
@@ -415,36 +414,30 @@ public class JetVideoTrimmer extends FrameLayout {
                 if (METADATA_KEY_DURATION < MIN_TIME_FRAME) {
                     if (mOnTrimVideoListener != null)
                         mOnTrimVideoListener.onError("Video duration too short");
+                    enableContinueButton();
                     return;
                 }
 
                 if (!mVideoMimeTypeList.contains(mimeType)) {
                     if (mOnTrimVideoListener != null)
                         mOnTrimVideoListener.onError("Unsupported video format. Accepted formats are .MPG, .MP4, .AVI, .FLV, .WMV.");
+                    enableContinueButton();
                     return;
                 }
 
                 if (!mimeType.equalsIgnoreCase("video/mp4")) {
                     if (mOnTrimVideoListener != null && forStory) {
                         mOnTrimVideoListener.getResult(mSrc, mLeftProgressPos, mRightProgressPos, true);
+                        enableContinueButton();
                         return;
                     } else if (mOnTrimVideoListener != null) {
                         mOnTrimVideoListener.getResult(mSrc, mLeftProgressPos, mRightProgressPos);
+                        enableContinueButton();
                         return;
                     }
                 }
 
                 final File file = new File(mSrc.getPath());
-
-
-//            if (mTimeVideo < MIN_TIME_FRAME) {
-//
-//                if ((METADATA_KEY_DURATION - mRightProgressPos) > (MIN_TIME_FRAME - mTimeVideo)) {
-//                    mEndPosition += (MIN_TIME_FRAME - mTimeVideo);
-//                } else if (mStartPosition > (MIN_TIME_FRAME - mTimeVideo)) {
-//                    mStartPosition -= (MIN_TIME_FRAME - mTimeVideo);
-//                }
-//            }
 
                 //notify that video trimming started
                 if (mOnTrimVideoListener != null)
@@ -467,13 +460,16 @@ public class JetVideoTrimmer extends FrameLayout {
                                     }
                                     final String filePath = getDestinationPath(forStory) + fileName;
                                     File file2 = new File(filePath);
-                                    TrimVideoUtil2.startTrim(mContext, file, file2, (int) mLeftProgressPos, (int) mRightProgressPos, mOnTrimVideoListener,forStory);
+                                    TrimVideoUtil2.startTrim(mContext, file, file2, (int) mLeftProgressPos, (int) mRightProgressPos, mOnTrimVideoListener, forStory);
                                 } catch (IndexOutOfBoundsException e) {
                                     mOnTrimVideoListener.onError(mContext.getString(R.string.unsuported_media));
+                                    enableContinueButton();
                                 } catch (Exception e) {
                                     mOnTrimVideoListener.onError(mContext.getString(R.string.unsuported_media));
+                                    enableContinueButton();
                                 } catch (final Throwable e) {
                                     mOnTrimVideoListener.onError(mContext.getString(R.string.unsuported_media));
+                                    enableContinueButton();
                                     Thread.getDefaultUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
                                 }
                             }
@@ -482,8 +478,29 @@ public class JetVideoTrimmer extends FrameLayout {
             }
 
         } catch (Exception e) {
+            enableContinueButton();
         }
     }
+
+    private void disableContinueButton() {
+        continueTXT.setClickable(false);
+        continueTXT.setEnabled(false);
+    }
+
+    public void enableContinueButton() {
+        if (continueTXT != null) {
+            continueTXT.setClickable(true);
+            continueTXT.setEnabled(true);
+        }
+    }
+
+//    @Override
+//    public void onWindowFocusChanged(boolean hasWindowFocus) {
+//        super.onWindowFocusChanged(hasWindowFocus);
+//        if (hasWindowFocus){
+//            enableContinueButton();
+//        }
+//    }
 
     public void pauseProgressHandlerAndRemoveCallBack() {
         pauseVideo();
@@ -526,10 +543,10 @@ public class JetVideoTrimmer extends FrameLayout {
                 if (!mediaStorageDir.exists()) {
                     mediaStorageDir.mkdirs();
                 }
-                String videoStoragePath="";
+                String videoStoragePath = "";
                 if (!forStory) {
                     videoStoragePath = mediaStorageDir + "/uploadedVideos";
-                }else{
+                } else {
                     videoStoragePath = mediaStorageDir + "/TuneStory";
                 }
                 createDirectory(videoStoragePath);
@@ -704,12 +721,11 @@ public class JetVideoTrimmer extends FrameLayout {
 
     public void setForStory(boolean forStory) {
         this.forStory = forStory;
-        if (forStory){
+        if (forStory) {
             titleTrim.setVisibility(VISIBLE);
-        }else{
+        } else {
             titleTrim.setVisibility(GONE);
         }
-
     }
 
     class ActivitySwipeDetector implements View.OnTouchListener {
